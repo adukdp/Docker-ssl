@@ -1,0 +1,58 @@
+search self signed certificate linux one line
+on this site https://major.io/2007/08/02/generate-self-signed-certificate-and-key-in-one-line/ you get cmd to run
+openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 -keyout docker.key -out docker.crt
+just enter next enter tull ask
+Common Name (e.g. server FQDN or YOUR name) []:13.233.115.232    #just here put your server ip else just enter
+rest enter
+ubuntu@ip-172-31-5-6:~/Docker-ssl$ ll
+total 40
+drwxrwxr-x 4 ubuntu ubuntu 4096 Dec 27 12:46 ./
+drwxr-xr-x 7 ubuntu ubuntu 4096 Dec 27 12:27 ../
+drwxrwxr-x 8 ubuntu ubuntu 4096 Dec 27 10:52 .git/
+-rw-rw-r-- 1 ubuntu ubuntu   13 Dec 27 10:49 README.md
+-rw-rw-r-- 1 ubuntu ubuntu 1314 Dec 27 12:46 docker.crt
+-rw------- 1 ubuntu ubuntu 1704 Dec 27 12:44 docker.key
+
+add in Dockerfile to install mod_ssl openssl
+
+create virtual host configuration write in file ssl.conf
+How to enable https✔[need certificates] on Apache CentOS
+https://www.techrepublic.com/article/how-to-enable-https-on-apache-centos/ this site gives 
+https vhost apache gives below site info how to add certificates
+https://cwiki.apache.org/confluence/display/HTTPD/NameBasedSSLVHosts
+
+<VirtualHost *:443>
+        SSLEngine on
+        
+        SSLCertificateFile      /docker.crt
+        SSLCertificateKeyFile   /docker.key
+	ServerAdmin example@it.com
+	DocumentRoot "/var/www/html"
+	ServerName 13.233.115.232
+	ErrorLog /var/www/html/error.log
+</VirtualHost>
+
+vim Dockerfile
+FROM centos:7
+
+RUN \
+  yum -y install \
+    httpd \
+    php \
+    php-mysql
+    mod_ssl \
+    openssl
+
+COPY html-ssl /var/www/html
+RUN echo "<?php phpinfo(); ?>" >/var/www/html/test.php
+COPY docker.crt /docker.crt
+COPY docker.key /docker.key
+COPY ssl.conf /etc/httpd/conf.d/default.conf
+CMD apachectl -DFOREGROUND
+
+:wq!
+ docker build -t apache-ssl:v4 -f httpd-php-mysql-ssl .
+ docker run -d -p 443:443 --name apache-ssl-server apache-ssl:v4
+ 
+ now if you do https://ip:443 advance go you see same page which was with http as this is our own created certificates it not shows fully secure
+ 
