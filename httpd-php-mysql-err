@@ -1,0 +1,12 @@
+FROM centos
+
+#here we will get error the package should be php-mysqlnd
+RUN yum install -y httpd php php-mysql
+
+#copying files into root dir of httpd
+COPY html-ssl /var/www/html
+
+#test php service by define function for php whos o/p redirect to /var/www/html; here we get error the syntax shoul be "<? php phpinfo(); ?>"
+RUN echo "<? phpinfo(); ?>" /var/www/html/test.php
+
+CMD apachectl -DFOREGROUND
